@@ -18,3 +18,6 @@
 
 // String cronExpression = '0 0 0 * * ?'; // Runs daily at midnight UTC
 // System.schedule('WarehouseSyncScheduleJob', cronExpression, sch);
+
+Date d = Date.parse('1/1/2025');
+System.debug(d);

@@ -80,9 +80,6 @@ public with sharing class MaintenanceRequestHelper {
     }            
 
     private static Integer calculateMinDueDateOfProducts(List<Product2> products) {
-        if (products.isEmpty()) {
-            return 0;
-        }
         Integer minDueDate = (Integer) products[0]?.Maintenance_Cycle__c;
         for (Product2 p : products) {
             if (p.Maintenance_Cycle__c < minDueDate && p.Maintenance_Cycle__c != null) {

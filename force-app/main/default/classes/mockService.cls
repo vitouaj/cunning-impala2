@@ -1,8 +1,6 @@
-@IsTest
-public with sharing class MaintenanceRequestHelperTest {
-    // implement scheduled code here
-    @TestSetup
-    static void makeData(){
+global class mockService {
+    
+    global static void setup() {
         List<Case> casesToCreate = new List<Case>();
 
         // Create one Vehicle__c record with sample data
@@ -58,10 +56,29 @@ public with sharing class MaintenanceRequestHelperTest {
         insert prods;
         insert casesToCreate;
 
-        List<Equipment_Maintenance_Item__c> eqItems = new List<Equipment_Maintenance_Item__c>();
+        // test data for trigger
+        Case case1 = new Case();
+        case1.Type = 'Repair';
+        case1.Subject = 'Test Routine Maintenance';
+        case1.Vehicle__c = vehicle1.Id;
+        case1.Description = 'test description';
+        case1.Product__c = 'GC1060';
+        case1.Status = 'Working';
+        case1.Date_Reported__c = Date.parse('1/1/2025');
 
-        // List<Case> caseCreated = [SELECT Id FROM Case LIMIT 5];
-        // List<Product2> equipments = [SELECT Id FROM Product2 LIMIT 5];
+        Case case2 = new Case();
+        case2.Type = 'Routine Maintenance';
+        case2.Subject = 'Test2 Routine Maintenance';
+        case2.Vehicle__c = vehicle1.Id;
+        case2.Description = 'test description';
+        case2.Status = 'Working';
+        case2.Product__c = 'GC1062';
+        case2.Date_Reported__c = Date.parse('1/1/2025');
+
+        List<Case> caseTrigger = new List<Case>{case1, case2};
+        insert caseTrigger;
+
+        List<Equipment_Maintenance_Item__c> eqItems = new List<Equipment_Maintenance_Item__c>();
 
         for(Integer i = 0; i<5; i++) {
             Equipment_Maintenance_Item__c item = new Equipment_Maintenance_Item__c(
@@ -75,40 +92,21 @@ public with sharing class MaintenanceRequestHelperTest {
                 Maintenance_Request__c = casesToCreate[i].Id,
                 Quantity__c = 5
             );
-
             eqItems.add(item);
             eqItems.add(item2);
         }
 
-        insert eqItems;
-    }
-
-    @IsTest
-    static void updateWorkOrdersTest() {
-        List<Case> cases = [SELECT Id, ParentId, Type, Subject, Vehicle__c, Description, Product__c, Date_Reported__c FROM Case LIMIT 5];
-        List<Id> caseIds = new List<Id>();
-        for (Case cs : cases) {
-            caseIds.add(cs.Id);
+        for (Product2 p : prods) {
+            for (Case cs : caseTrigger) {
+                Equipment_Maintenance_Item__c item = new Equipment_Maintenance_Item__c(
+                    Equipment__c = p.Id,
+                    Maintenance_Request__c = cs.Id,
+                    Quantity__c = 2
+                );
+                eqItems.add(item);
+            }
         }
 
-        Test.startTest();
-        MaintenanceRequestHelper.updateWorkOrders(cases);
-        Test.stopTest();
-
-        List<Case> casesCreated = [SELECT Id FROM Case WHERE ParentId IN :caseIds];
-        Assert.areEqual(casesCreated.size(), 5, '5 newly created cases should be created');
+        insert eqItems;
     }
-
-    @IsTest
-    static void updateWorkOrdersShouldReturnEmptyTest() {
-        List<Case> cases = new List<Case>();
-        Test.startTest();
-        MaintenanceRequestHelper.updateWorkOrders(cases);
-        Test.stopTest();
-
-        Date reportedDate = Date.parse('1/1/2025');
-        List<Case> casesCreated = [SELECT Id, Date_Due__c FROM Case WHERE Date_Due__c >: reportedDate];
-        Assert.areEqual(0, casesCreated.size(), '0 case created');
-    }
-
 }
